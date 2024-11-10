@@ -5,12 +5,12 @@ import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { SolidMarkdown } from 'solid-markdown';
 import * as Sentry from '@sentry/browser';
 import { saveAs } from 'file-saver';
-import DocViewer, { DocViewerRenderers } from 'react-doc-viewer';
 
 function App() {
   const [user, setUser] = createSignal(null);
   const [currentPage, setCurrentPage] = createSignal('login');
   const [uploadedFile, setUploadedFile] = createSignal(null);
+  const [fileContent, setFileContent] = createSignal('');
   const [highlightedWords, setHighlightedWords] = createSignal([]);
   const [vocabularyList, setVocabularyList] = createSignal([]);
   const [loading, setLoading] = createSignal(false);
@@ -18,6 +18,7 @@ function App() {
   const [note, setNote] = createSignal('');
   const [filter, setFilter] = createSignal('');
   const [sortCriteria, setSortCriteria] = createSignal('date');
+  const [errorMessage, setErrorMessage] = createSignal('');
 
   const checkUserSignedIn = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -58,9 +59,25 @@ function App() {
 
   const handleFileUpload = async (e) => {
     setLoading(true);
+    setErrorMessage('');
     try {
       const file = e.target.files[0];
+
+      if (!['application/pdf', 'text/plain'].includes(file.type)) {
+        setErrorMessage('Unsupported file type. Only PDF and text files are supported.');
+        setLoading(false);
+        return;
+      }
+
       setUploadedFile(file);
+
+      if (file.type === 'text/plain') {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setFileContent(e.target.result);
+        };
+        reader.readAsText(file);
+      }
 
       const { data: { session } } = await supabase.auth.getSession();
 
@@ -82,6 +99,7 @@ function App() {
     } catch (error) {
       console.error('File upload error:', error);
       Sentry.captureException(error);
+      setErrorMessage('Error uploading file.');
     } finally {
       setLoading(false);
     }
@@ -260,10 +278,13 @@ function App() {
               <h2 class="text-2xl font-bold mb-4 text-purple-600">Upload Document</h2>
               <input
                 type="file"
-                accept=".pdf,.doc,.docx,.txt"
+                accept=".pdf,.txt"
                 onChange={handleFileUpload}
                 class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-transparent cursor-pointer box-border"
               />
+              <Show when={errorMessage()}>
+                <p class="mt-2 text-red-600">{errorMessage()}</p>
+              </Show>
               <Show when={loading()}>
                 <p class="mt-2 text-purple-600">Uploading...</p>
               </Show>
@@ -276,15 +297,17 @@ function App() {
               <h2 class="text-2xl font-bold mb-4 text-purple-600">Document Reader</h2>
               <Show when={uploadedFile()} fallback={<p class="text-gray-600">No document uploaded.</p>}>
                 <div class="bg-white p-4 rounded-lg shadow-md h-96 overflow-y-auto">
-                  <DocViewer
-                    documents={[{ uri: URL.createObjectURL(uploadedFile()) }]}
-                    pluginRenderers={DocViewerRenderers}
-                    config={{
-                      header: {
-                        disableHeader: true,
-                      },
-                    }}
-                  />
+                  <Show when={uploadedFile().type === 'application/pdf'}>
+                    <iframe
+                      src={URL.createObjectURL(uploadedFile())}
+                      class="w-full h-full"
+                    ></iframe>
+                  </Show>
+                  <Show when={uploadedFile().type === 'text/plain'}>
+                    <pre class="whitespace-pre-wrap">
+                      {fileContent()}
+                    </pre>
+                  </Show>
                   {/* Implement highlight functionality and word extraction here */}
                 </div>
               </Show>

@@ -2,6 +2,7 @@ import { authenticateUser, sentryWrapper } from './_apiUtils.js';
 import formidable from 'formidable';
 import { createClient } from '@supabase/supabase-js';
 import * as Sentry from '@sentry/node';
+import fs from 'fs';
 
 const supabaseStorage = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 

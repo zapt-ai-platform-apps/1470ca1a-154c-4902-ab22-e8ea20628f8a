@@ -14,10 +14,11 @@
     "@supabase/auth-ui-solid": "^0.3.8",
     "@zapt/zapt-js": "^1.0.5",
     "drizzle-orm": "^0.33.0",
-    "solid-js": "^1.8.22",
-    "solid-markdown": "^2.0.13",
     "file-saver": "^2.0.5",
-    "react-doc-viewer": "^0.9.0"
+    "formidable": "^3.7.0",
+    "pdfjs-dist": "^3.3.122",
+    "solid-js": "^1.8.22",
+    "solid-markdown": "^2.0.13"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.20",
